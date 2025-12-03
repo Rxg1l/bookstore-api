@@ -1,132 +1,220 @@
 package com.bookstore.controller;
 
 import com.bookstore.dto.BukuDTO;
-import com.bookstore.dto.CreateBukuRequest;
+import com.bookstore.dto.CustomResponse;
+import com.bookstore.dto.ResponseUtil;
 import com.bookstore.service.BukuService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/buku")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
-@Tag(name = "Book Management", description = "API untuk manajemen data buku")
+@RequiredArgsConstructor
 public class BukuController {
-    
+
     private final BukuService bukuService;
 
-    @Operation(summary = "Get semua buku", description = "Mendapatkan daftar semua buku yang tersedia")
-    @ApiResponse(responseCode = "200", description = "Berhasil mendapatkan data buku")
+    // GET ALL - Tanpa pagination
     @GetMapping
-    public ResponseEntity<List<BukuDTO>> getAllBuku() {
-        List<BukuDTO> bukuList = bukuService.getAllBuku();
-        return ResponseEntity.ok(bukuList);
+    public ResponseEntity<CustomResponse<List<BukuDTO>>> getAllBuku() {
+        List<BukuDTO> semuaBuku = bukuService.getAllBuku();
+        return ResponseUtil.success("Data buku berhasil diambil", semuaBuku);
     }
 
-    @Operation(summary = "Get buku by ID", description = "Mendapatkan detail buku berdasarkan ID")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Buku ditemukan"),
-        @ApiResponse(responseCode = "404", description = "Buku tidak ditemukan", content = @Content)
-    })
+    // GET ALL - Dengan pagination
+    @GetMapping("/paginated")
+    public ResponseEntity<CustomResponse<List<BukuDTO>>> getAllBukuPaginated(
+            Pageable pageable) {
+        Page<BukuDTO> bukuPage = bukuService.getAllBukuPaginated(pageable);
+        return ResponseUtil.paginated(bukuPage, "Data buku berhasil diambil");
+    }
+
+    // GET BY ID
     @GetMapping("/{id}")
-    public ResponseEntity<BukuDTO> getBukuById(
-            @Parameter(description = "ID buku yang ingin dicari") @PathVariable Long id) {
-        BukuDTO buku = bukuService.getBukuById(id);
-        return ResponseEntity.ok(buku);
+    public ResponseEntity<CustomResponse<BukuDTO>> getBukuById(@PathVariable Long id) {
+        try {
+            BukuDTO buku = bukuService.getBukuById(id);
+            return ResponseUtil.success("Buku berhasil ditemukan", buku);
+        } catch (Exception e) {
+            return ResponseUtil.notFound(e.getMessage());
+        }
     }
 
-    @Operation(summary = "Tambah buku baru", description = "Menambahkan buku baru ke dalam sistem")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Buku berhasil dibuat"),
-        @ApiResponse(responseCode = "400", description = "Data input tidak valid", content = @Content)
-    })
+    // CREATE
     @PostMapping
-    public ResponseEntity<BukuDTO> createBuku(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                description = "Data buku yang akan dibuat",
-                required = true,
-                content = @Content(schema = @Schema(implementation = CreateBukuRequest.class))
-            )
-            @RequestBody CreateBukuRequest request) {
-        BukuDTO createdBuku = bukuService.createBuku(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdBuku);
+    public ResponseEntity<CustomResponse<BukuDTO>> createBuku(@RequestPart("buku") String bukuJson,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            BukuDTO bukuDTO = objectMapper.readValue(bukuJson, BukuDTO.class);
+
+            BukuDTO bukuBaru = bukuService.createBuku(bukuDTO);
+            return ResponseUtil.created("Buku berhasil ditambahkan", bukuBaru);
+        } catch (Exception e) {
+            return ResponseUtil.error("Gagal menambahkan buku: " + e.getMessage());
+        }
     }
 
-    @Operation(summary = "Update buku", description = "Memperbarui data buku berdasarkan ID")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Buku berhasil diupdate"),
-        @ApiResponse(responseCode = "404", description = "Buku tidak ditemukan", content = @Content)
-    })
-
+    // UPDATE
     @PutMapping("/{id}")
-    public ResponseEntity<BukuDTO> updateBuku(
-            @Parameter(description = "ID buku yang akan diupdate") @PathVariable Long id,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                description = "Data buku yang akan diupdate",
-                required = true,
-                content = @Content(schema = @Schema(implementation = CreateBukuRequest.class))
-            )
-            @RequestBody CreateBukuRequest request) {
-        BukuDTO updatedBuku = bukuService.updateBuku(id, request);
-        return ResponseEntity.ok(updatedBuku);
+    public ResponseEntity<CustomResponse<BukuDTO>> updateBuku(
+            @PathVariable Long id,
+            @Valid @RequestBody BukuDTO bukuDTO) {
+        try {
+            BukuDTO bukuUpdated = bukuService.updateBuku(id, bukuDTO);
+            return ResponseUtil.success("Buku berhasil diupdate", bukuUpdated);
+        } catch (Exception e) {
+            return ResponseUtil.error("Gagal mengupdate buku: " + e.getMessage());
+        }
     }
 
-    @Operation(summary = "Hapus buku", description = "Menghapus buku berdasarkan ID")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Buku berhasil dihapus"),
-        @ApiResponse(responseCode = "404", description = "Buku tidak ditemukan", content = @Content)
-    })
+    // DELETE
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBuku(
-            @Parameter(description = "ID buku yang akan dihapus") @PathVariable Long id) {
-        bukuService.deleteBuku(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CustomResponse<Void>> deleteBuku(@PathVariable Long id) {
+        try {
+            bukuService.deleteBuku(id);
+            return ResponseUtil.success("Buku berhasil dihapus");
+        } catch (Exception e) {
+            return ResponseUtil.error("Gagal menghapus buku: " + e.getMessage());
+        }
     }
 
-    @Operation(summary = "Cari buku by judul", description = "Mencari buku berdasarkan kata kunci dalam judul")
-    @ApiResponse(responseCode = "200", description = "Hasil pencarian")
-    @GetMapping("/search/judul")
-    public ResponseEntity<List<BukuDTO>> searchByJudul(
-            @Parameter(description = "Kata kunci pencarian judul") @RequestParam String judul) {
-        List<BukuDTO> bukuList = bukuService.searchByJudul(judul);
-        return ResponseEntity.ok(bukuList);
-    }
-
-    @Operation(summary = "Cari buku by penulis", description = "Mencari buku berdasarkan nama penulis")
-    @ApiResponse(responseCode = "200", description = "Hasil pencarian")
-    @GetMapping("/search/penulis")
-    public ResponseEntity<List<BukuDTO>> searchByPenulis(
-            @Parameter(description = "Nama penulis") @RequestParam String penulis) {
-        List<BukuDTO> bukuList = bukuService.searchByPenulis(penulis);
-        return ResponseEntity.ok(bukuList);
-    }
-
-    @Operation(summary = "Cari buku by kategori", description = "Mencari buku berdasarkan kategori")
-    @ApiResponse(responseCode = "200", description = "Hasil pencarian")
-    @GetMapping("/search/kategori")
-    public ResponseEntity<List<BukuDTO>> searchByKategori(
-            @Parameter(description = "Kategori buku") @RequestParam String kategori) {
-        List<BukuDTO> bukuList = bukuService.searchByKategori(kategori);
-        return ResponseEntity.ok(bukuList);
-    }
-
-    @Operation(summary = "Cari buku by keyword", description = "Mencari buku berdasarkan kata kunci di judul, penulis, atau kategori")
-    @ApiResponse(responseCode = "200", description = "Hasil pencarian")
+    // SEARCH
     @GetMapping("/search")
-    public ResponseEntity<List<BukuDTO>> searchByKeyword(
-            @Parameter(description = "Kata kunci pencarian") @RequestParam String keyword) {
-        List<BukuDTO> bukuList = bukuService.searchByKeyword(keyword);
-        return ResponseEntity.ok(bukuList);
+    public ResponseEntity<CustomResponse<List<BukuDTO>>> searchBuku(
+            @RequestParam String keyword) {
+        try {
+            List<BukuDTO> hasilPencarian = bukuService.searchBuku(keyword);
+            return ResponseUtil.success(
+                    "Hasil pencarian berhasil didapatkan (jika data kosong berarti sudah dihapus admin)",
+                    hasilPencarian);
+        } catch (Exception e) {
+            return ResponseUtil.error("Gagal mencari buku: " + e.getMessage());
+        }
     }
 }
+
+// ✅ PAGINATION ENDPOINT - FIXED
+// @Operation(summary = "Get semua buku dengan pagination")
+// @GetMapping("/paginated")
+// public ResponseEntity<PaginationResponse<BukuDTO>> getAllBukuPagination(
+// @RequestParam(defaultValue = "0") int page,
+// @RequestParam(defaultValue = "10") int size,
+// @RequestParam(defaultValue = "id") String sortBy,
+// @RequestParam(defaultValue = "asc") String sortDir) {
+// try {
+// PaginationResponse<BukuDTO> response = bukuService.getAllBukuPagination(page,
+// size, sortBy, sortDir);
+// return ResponseEntity.ok(response);
+// } catch (Exception e) {
+// PaginationResponse<BukuDTO> errorResponse = PaginationResponse
+// .createError("Gagal mengambil data: " + e.getMessage());
+// return ResponseEntity.badRequest().body(errorResponse);
+// }
+// }
+
+// @Operation(summary = "Search buku dengan pagination")
+// @GetMapping("/search/pagination")
+// public ResponseEntity<PaginationResponse<BukuDTO>> searchByKeywordPagination(
+// @RequestParam String keyword,
+// @RequestParam(defaultValue = "0") int page,
+// @RequestParam(defaultValue = "10") int size) {
+// try {
+// PaginationResponse<BukuDTO> response =
+// bukuService.searchByKeywordPagination(keyword, page, size);
+// return ResponseEntity.ok(response);
+// } catch (Exception e) {
+// PaginationResponse<BukuDTO> errorResponse = PaginationResponse
+// .createError("Gagal mencari data: " + e.getMessage());
+// return ResponseEntity.badRequest().body(errorResponse);
+// }
+// }
+
+// ✅ REGULAR ENDPOINTS
+// @Operation(summary = "Get semua buku")
+// @GetMapping
+// public ResponseEntity<CustomResponse<List<BukuDTO>>> getAllBuku() {
+// try {
+// List<BukuDTO> bukuList = bukuService.getAllBuku();
+// return ResponseEntity.ok(CustomResponse.success("Data buku berhasil diambil",
+// bukuList));
+// } catch (Exception e) {
+// return ResponseEntity.badRequest()
+// .body(CustomResponse.error("Gagal mengambil data buku: " + e.getMessage()));
+// }
+// }
+
+// @Operation(summary = "Get buku by ID")
+// @GetMapping("/{id}")
+// public ResponseEntity<CustomResponse<BukuDTO>> getBukuById(@PathVariable Long
+// id) {
+// try {
+// BukuDTO buku = bukuService.getBukuById(id);
+// return ResponseEntity.ok(CustomResponse.success("Buku ditemukan", buku));
+// } catch (Exception e) {
+// return ResponseEntity.badRequest().body(CustomResponse.error("Buku tidak
+// ditemukan: " + e.getMessage()));
+// }
+// }
+
+// @Operation(summary = "Tambah buku baru (JSON)")
+// @PostMapping
+// public ResponseEntity<CustomResponse<BukuDTO>> createBuku(@RequestBody
+// CreateBukuRequest request) {
+// try {
+// BukuDTO createdBuku = bukuService.createBuku(request);
+// return ResponseEntity.ok(CustomResponse.success("Buku berhasil dibuat",
+// createdBuku));
+// } catch (Exception e) {
+// return ResponseEntity.badRequest().body(CustomResponse.error("Gagal membuat
+// buku: " + e.getMessage()));
+// }
+// }
+
+// @Operation(summary = "Tambah buku via form-data")
+// @PostMapping("/form")
+// public ResponseEntity<CustomResponse<BukuDTO>> createBukuViaForm(
+// @RequestParam String judul,
+// @RequestParam String penulis,
+// @RequestParam(required = false) String penerbit,
+// @RequestParam(required = false) Integer tahunTerbit,
+// @RequestParam(required = false) String isbn,
+// @RequestParam(required = false) String deskripsi,
+// @RequestParam(required = false) Integer jumlahHalaman,
+// @RequestParam(required = false) String kategori,
+// @RequestParam Double harga,
+// @RequestParam(required = false) Integer stok) {
+
+// try {
+// CreateBukuRequest request = new CreateBukuRequest();
+// request.setJudul(judul);
+// request.setPenulis(penulis);
+// request.setPenerbit(penerbit);
+// request.setTahunTerbit(tahunTerbit);
+// request.setIsbn(isbn);
+// request.setDeskripsi(deskripsi);
+// request.setJumlahHalaman(jumlahHalaman);
+// request.setKategori(kategori);
+// request.setHarga(harga);
+// request.setStok(stok != null ? stok : 0);
+
+// BukuDTO createdBuku = bukuService.createBuku(request);
+// return ResponseEntity.ok(CustomResponse.success("Buku berhasil dibuat via
+// form", createdBuku));
+// } catch (Exception e) {
+// return ResponseEntity.badRequest().body(CustomResponse.error("Gagal membuat
+// buku: " + e.getMessage()));
+// }
+// }
+// }

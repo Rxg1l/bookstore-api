@@ -1,6 +1,6 @@
 package com.bookstore.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,36 +8,46 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Request object untuk membuat atau update buku")
 public class CreateBukuRequest {
-    
-    @Schema(description = "Judul buku", example = "Laskar Pelangi", required = true)
+
+    @NotBlank(message = "Judul tidak boleh kosong")
+    @Size(min = 2, max = 200, message = "Judul harus 2-200 karakter")
     private String judul;
-    
-    @Schema(description = "Penulis buku", example = "Andrea Hirata", required = true)
+
+    @NotBlank(message = "Penulis tidak boleh kosong")
+    @Size(min = 2, max = 100, message = "Penulis harus 2-100 karakter")
     private String penulis;
-    
-    @Schema(description = "Penerbit buku", example = "Bentang Pustaka")
+
+    @NotBlank(message = "Penerbit tidak boleh kosong")
+    @Size(min = 2, max = 100, message = "Penerbit harus 2-100 karakter")
     private String penerbit;
-    
-    @Schema(description = "Tahun terbit", example = "2005")
+
+    @NotNull(message = "Tahun terbit tidak boleh kosong")
+    @Min(value = 1900, message = "Tahun terbit minimal 1900")
+    @Max(value = 2100, message = "Tahun terbit maksimal 2100")
     private Integer tahunTerbit;
-    
-    @Schema(description = "ISBN buku", example = "978-979-1227-78-5")
+
+    @NotBlank(message = "ISBN tidak boleh kosong")
+    @Pattern(regexp = "^[0-9-]+$", message = "ISBN hanya boleh mengandung angka dan tanda hubung")
     private String isbn;
-    
-    @Schema(description = "Deskripsi buku", example = "Novel tentang perjuangan anak-anak di Belitung")
+
+    @NotBlank(message = "Deskripsi tidak boleh kosong")
+    @Size(min = 10, max = 2000, message = "Deskripsi harus 10-2000 karakter")
     private String deskripsi;
-    
-    @Schema(description = "Jumlah halaman", example = "529")
+
+    @NotNull(message = "Jumlah halaman tidak boleh kosong")
+    @Min(value = 1, message = "Jumlah halaman minimal 1")
+    @Max(value = 10000, message = "Jumlah halaman maksimal 10000")
     private Integer jumlahHalaman;
-    
-    @Schema(description = "Kategori buku", example = "Fiksi")
+
+    @NotBlank(message = "Kategori tidak boleh kosong")
     private String kategori;
-    
-    @Schema(description = "Harga buku", example = "85000.0", required = true)
+
+    @NotNull(message = "Harga tidak boleh kosong")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Harga harus lebih dari 0")
     private Double harga;
-    
-    @Schema(description = "Stok buku", example = "50", required = true)
+
+    @NotNull(message = "Stok tidak boleh kosong")
+    @Min(value = 0, message = "Stok tidak boleh negatif")
     private Integer stok;
 }

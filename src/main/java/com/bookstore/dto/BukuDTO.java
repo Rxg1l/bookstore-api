@@ -10,37 +10,37 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(description = "Data Transfer Object untuk Buku")
 public class BukuDTO {
-    
+
     @Schema(description = "ID buku", example = "1")
     private Long id;
-    
-    @Schema(description = "Judul buku", example = "Laskar Pelangi", required = true)
+
+    @Schema(description = "Judul buku", example = "Laskar Pelangi")
     private String judul;
-    
-    @Schema(description = "Penulis buku", example = "Andrea Hirata", required = true)
+
+    @Schema(description = "Penulis buku", example = "Andrea Hirata")
     private String penulis;
-    
+
     @Schema(description = "Penerbit buku", example = "Bentang Pustaka")
     private String penerbit;
-    
+
     @Schema(description = "Tahun terbit", example = "2005")
     private Integer tahunTerbit;
-    
+
     @Schema(description = "ISBN buku", example = "978-979-1227-78-5")
     private String isbn;
-    
+
     @Schema(description = "Deskripsi buku", example = "Novel tentang perjuangan anak-anak di Belitung")
     private String deskripsi;
-    
+
     @Schema(description = "Jumlah halaman", example = "529")
     private Integer jumlahHalaman;
-    
+
     @Schema(description = "Kategori buku", example = "Fiksi")
     private String kategori;
-    
-    @Schema(description = "Harga buku", example = "85000.0", required = true)
+
+    @Schema(description = "Harga buku", example = "85000.0")
     private Double harga;
-    
-    @Schema(description = "Stok buku", example = "50", required = true)
+
+    @Schema(description = "Stok buku", example = "50")
     private Integer stok;
 }

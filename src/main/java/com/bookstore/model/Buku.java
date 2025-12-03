@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "buku")
@@ -12,54 +11,38 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Buku {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Biarkan seperti ini untuk MySQL
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @Column(nullable = false, length = 255)
+
+    @Column(nullable = false, length = 200)
     private String judul;
-    
+
     @Column(nullable = false, length = 100)
     private String penulis;
-    
-    @Column(length = 100)
+
+    @Column(nullable = false, length = 100)
     private String penerbit;
-    
-    @Column(name = "tahun_terbit")
+
+    @Column(name = "tahun_terbit", nullable = false)
     private Integer tahunTerbit;
-    
-    @Column(length = 20)
+
+    @Column(nullable = false, unique = true, length = 20)
     private String isbn;
-    
-    @Column(columnDefinition = "TEXT")
+
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String deskripsi;
-    
-    @Column(name = "jumlah_halaman")
+
+    @Column(name = "jumlah_halaman", nullable = false)
     private Integer jumlahHalaman;
-    
-    @Column(length = 50)
+
+    @Column(nullable = false, length = 50)
     private String kategori;
-    
-    @Column
+
+    @Column(nullable = false)
     private Double harga;
-    
-    @Column
+
+    @Column(nullable = false)
     private Integer stok;
-    
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
